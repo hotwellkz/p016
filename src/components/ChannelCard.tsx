@@ -168,7 +168,7 @@ const ChannelCard = ({
     >
       {/* Десктопная версия */}
       <div
-        className={`hidden md:block group relative rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-white shadow-sm transition hover:border-brand/50 hover:shadow-lg ${getAutomationClasses()}`}
+        className={`hidden md:block group relative rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-950/70 backdrop-blur-sm p-4 text-white shadow-lg channel-card-premium ${getAutomationClasses()}`}
         onMouseLeave={() => {
           if (!isTouchDevice) setShowDetails(false);
         }}
@@ -202,7 +202,7 @@ const ChannelCard = ({
             >
               <GripVertical size={16} />
             </button>
-            <div className="truncate text-sm font-semibold text-white">
+            <div className="truncate text-sm font-semibold text-white drop-shadow-sm">
               {number}. {channel.name}
             </div>
           </div>
@@ -273,7 +273,7 @@ const ChannelCard = ({
       </div>
 
       {/* Краткое описание с line-clamp */}
-      <div className="mb-2 text-xs text-slate-300 channel-description">
+      <div className="mb-2 text-xs text-slate-200 channel-description leading-relaxed">
         {channel.extraNotes ||
           "Описание канала пока не заполнено. Нажмите «Редактировать», чтобы добавить детали."}
       </div>
@@ -420,7 +420,7 @@ const ChannelCard = ({
 
       {/* Мобильная версия - карточка с двумя состояниями */}
       <div
-        className={`md:hidden w-full rounded-xl border border-white/10 bg-slate-900/60 text-white transition ${getAutomationClasses()}`}
+        className={`md:hidden w-full rounded-xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-950/70 backdrop-blur-sm text-white shadow-lg channel-card-premium transition ${getAutomationClasses()}`}
       >
         {/* Сжатое состояние - всегда видно */}
         <div className="px-4 py-3">
@@ -453,7 +453,7 @@ const ChannelCard = ({
                 >
                   <GripVertical size={14} />
                 </button>
-                <div className="text-[15px] sm:text-base font-semibold text-white truncate leading-tight">
+                <div className="text-[15px] sm:text-base font-semibold text-white truncate leading-tight drop-shadow-sm">
                   {number}. {channel.name}
                 </div>
               </div>
@@ -532,7 +532,7 @@ const ChannelCard = ({
                 <FileText size={16} />
               </button>
             )}
-            <div className="relative">
+            <div className="relative z-[9999]">
               <button
                 type="button"
                 onClick={() => setShowMobileActionsMenu(!showMobileActionsMenu)}
@@ -544,10 +544,10 @@ const ChannelCard = ({
               {showMobileActionsMenu && (
                 <>
                   <div
-                    className="fixed inset-0 z-30"
+                    className="fixed inset-0 z-[9998]"
                     onClick={() => setShowMobileActionsMenu(false)}
                   />
-                  <div className="absolute right-0 top-full z-40 mt-1 w-40 rounded-lg border border-white/10 bg-slate-900/95 p-2 shadow-xl backdrop-blur-xl">
+                  <div className="absolute right-0 bottom-full z-[9999] mb-1 w-40 rounded-lg border border-white/10 bg-slate-900/95 p-2 shadow-2xl backdrop-blur-xl channels-premium-header">
                     {onAutoGenerate && (
                       <button
                         type="button"
