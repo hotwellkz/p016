@@ -13,6 +13,7 @@ import testFirestoreRoutes from "./routes/testFirestoreRoutes";
 import authRoutes from "./routes/authRoutes";
 import channelRoutes from "./routes/channelRoutes";
 import scheduleRoutes from "./routes/scheduleRoutes";
+import notificationRoutes from "./routes/notificationRoutes";
 import { processAutoSendTick } from "./services/autoSendScheduler";
 import { Logger } from "./utils/logger";
 import { getFirestoreInfo, isFirestoreAvailable } from "./services/firebaseAdmin";
@@ -68,6 +69,7 @@ app.use("/api/test", testFirestoreRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/channels", channelRoutes);
 app.use("/api/schedule", scheduleRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });

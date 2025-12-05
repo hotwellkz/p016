@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Video, Wand2, Calendar, MoreVertical } from "lucide-react";
+import { Loader2, Plus, Video, Wand2, Calendar, MoreVertical, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   DndContext,
@@ -20,6 +20,7 @@ import ChannelCard from "../../components/ChannelCard";
 import AIAutoGenerateModal from "../../components/AIAutoGenerateModal";
 import CustomPromptModal from "../../components/CustomPromptModal";
 import UserMenu from "../../components/UserMenu";
+import NotificationBell from "../../components/NotificationBell";
 import { useAuthStore } from "../../stores/authStore";
 import { useChannelStore } from "../../stores/channelStore";
 import type { Channel } from "../../domain/channel";
@@ -203,6 +204,7 @@ const ChannelListPage = () => {
                   <span className="hidden sm:inline">Генератор</span>
                 </button>
               </div>
+              <NotificationBell />
               <UserMenu />
             </div>
           </div>
@@ -239,6 +241,17 @@ const ChannelListPage = () => {
                       onClick={() => setShowMobileMenu(false)}
                     />
                     <div className="absolute right-0 top-full z-40 mt-2 w-48 rounded-lg border border-white/10 bg-slate-900/95 p-2 shadow-xl backdrop-blur-xl">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigate("/notifications");
+                          setShowMobileMenu(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800/50"
+                      >
+                        <Bell size={16} />
+                        Уведомления
+                      </button>
                       <button
                         type="button"
                         onClick={() => {

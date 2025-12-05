@@ -9,6 +9,7 @@ import { Logger } from "../utils/logger";
 import { google } from "googleapis";
 import { generateVideoFileName } from "../utils/fileUtils";
 import { sendVideoUploadNotification } from "./notificationService";
+import { notificationRepository } from "../repositories/notificationRepo";
 
 const SYNX_CHAT_ID = process.env.SYNX_CHAT_ID;
 
@@ -293,6 +294,42 @@ export async function downloadAndUploadVideoToDrive(
           errorStack: downloadError?.stack,
           errorName: downloadError?.name
         });
+
+        // Создаём уведомление об ошибке скачивания
+        try {
+          let timeSlot: string | undefined;
+          if (scheduleId) {
+            try {
+              const scheduleDoc = await channelRef.collection("autoSendSchedules").doc(scheduleId).get();
+              if (scheduleDoc.exists) {
+                const scheduleData = scheduleDoc.data();
+                timeSlot = scheduleData?.time || undefined;
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          await notificationRepository.create({
+            userId,
+            channelId,
+            type: "video_download_failed",
+            title: "Ошибка скачивания видео из Telegram",
+            message: `Канал: ${channelData.name || channelId}${timeSlot ? `, слот ${timeSlot}` : ""}. ${downloadError?.message || "Не удалось скачать видео"}`,
+            status: "error",
+            isRead: false,
+            metadata: {
+              scheduleId: scheduleId || undefined,
+              timeSlot,
+              errorDetails: downloadError?.message || String(downloadError)
+            }
+          });
+        } catch (notificationError) {
+          Logger.error("Failed to create download error notification", {
+            error: notificationError instanceof Error ? notificationError.message : String(notificationError)
+          });
+        }
+
         throw new Error(`VIDEO_DOWNLOAD_FAILED: Не удалось скачать видео из Telegram. ${downloadError?.message || String(downloadError)}`);
       }
 
@@ -514,6 +551,42 @@ export async function downloadAndUploadVideoToDrive(
               folderId: finalFolderId
             });
             
+            // Создаём уведомление об ошибке загрузки
+            try {
+              let timeSlot: string | undefined;
+              if (scheduleId) {
+                try {
+                  const scheduleDoc = await channelRef.collection("autoSendSchedules").doc(scheduleId).get();
+                  if (scheduleDoc.exists) {
+                    const scheduleData = scheduleDoc.data();
+                    timeSlot = scheduleData?.time || undefined;
+                  }
+                } catch {
+                  // ignore
+                }
+              }
+
+              await notificationRepository.create({
+                userId,
+                channelId,
+                type: "video_upload_failed",
+                title: "Ошибка загрузки видео на Google Drive",
+                message: `Канал: ${channelData.name || channelId}${timeSlot ? `, слот ${timeSlot}` : ""}, файл: ${driveFileName}. ${serviceAccountError?.message || uploadError?.message || "Не удалось загрузить файл"}`,
+                status: "error",
+                isRead: false,
+                metadata: {
+                  fileName: driveFileName,
+                  scheduleId: scheduleId || undefined,
+                  timeSlot,
+                  errorDetails: serviceAccountError?.message || uploadError?.message || String(uploadError)
+                }
+              });
+            } catch (notificationError) {
+              Logger.error("Failed to create upload error notification", {
+                error: notificationError instanceof Error ? notificationError.message : String(notificationError)
+              });
+            }
+
             throw new Error(
               `GOOGLE_DRIVE_UPLOAD_FAILED: Не удалось загрузить файл в Google Drive. ` +
               `OAuth ошибка: ${uploadError?.message || String(uploadError)}. ` +
@@ -522,6 +595,42 @@ export async function downloadAndUploadVideoToDrive(
             );
           }
         } else {
+          // Создаём уведомление об ошибке загрузки (только OAuth)
+          try {
+            let timeSlot: string | undefined;
+            if (scheduleId) {
+              try {
+                const scheduleDoc = await channelRef.collection("autoSendSchedules").doc(scheduleId).get();
+                if (scheduleDoc.exists) {
+                  const scheduleData = scheduleDoc.data();
+                  timeSlot = scheduleData?.time || undefined;
+                }
+              } catch {
+                // ignore
+              }
+            }
+
+            await notificationRepository.create({
+              userId,
+              channelId,
+              type: "video_upload_failed",
+              title: "Ошибка загрузки видео на Google Drive",
+              message: `Канал: ${channelData.name || channelId}${timeSlot ? `, слот ${timeSlot}` : ""}, файл: ${driveFileName}. ${uploadError?.message || "Не удалось загрузить файл"}`,
+              status: "error",
+              isRead: false,
+              metadata: {
+                fileName: driveFileName,
+                scheduleId: scheduleId || undefined,
+                timeSlot,
+                errorDetails: uploadError?.message || String(uploadError)
+              }
+            });
+          } catch (notificationError) {
+            Logger.error("Failed to create upload error notification", {
+              error: notificationError instanceof Error ? notificationError.message : String(notificationError)
+            });
+          }
+
           // Если не было OAuth токена, ошибка уже проброшена выше
           throw uploadError;
         }
@@ -684,6 +793,49 @@ export async function downloadAndUploadVideoToDrive(
         scheduleId: scheduleId || "manual"
       });
 
+      // Создаём уведомление об успешной загрузке
+      try {
+        // Получаем информацию о времени слота, если есть scheduleId
+        let timeSlot: string | undefined;
+        if (scheduleId) {
+          try {
+            const scheduleDoc = await channelRef.collection("autoSendSchedules").doc(scheduleId).get();
+            if (scheduleDoc.exists) {
+              const scheduleData = scheduleDoc.data();
+              timeSlot = scheduleData?.time || undefined;
+            }
+          } catch (scheduleError) {
+            Logger.warn("Failed to fetch schedule info for notification", {
+              scheduleId,
+              error: String(scheduleError)
+            });
+          }
+        }
+
+        await notificationRepository.create({
+          userId,
+          channelId,
+          type: "video_uploaded",
+          title: "Видео загружено на Google Drive",
+          message: `Канал: ${channelData.name || channelId}${timeSlot ? `, слот ${timeSlot}` : ""}, файл: ${driveFileName}`,
+          status: "success",
+          isRead: false,
+          driveFileUrl: driveResult.webViewLink || driveResult.webContentLink,
+          metadata: {
+            fileName: driveFileName,
+            scheduleId: scheduleId || undefined,
+            timeSlot
+          }
+        });
+      } catch (notificationError) {
+        // Ошибки при создании уведомления не должны ломать процесс
+        Logger.error("Failed to create success notification", {
+          error: notificationError instanceof Error ? notificationError.message : String(notificationError),
+          userId,
+          channelId
+        });
+      }
+
       return {
         success: true,
         driveFileId: driveResult.fileId,
@@ -713,6 +865,54 @@ export async function downloadAndUploadVideoToDrive(
       tempFilePath,
       scheduleId
     });
+
+    // Создаём уведомление об общей ошибке автоматизации (если ещё не создано)
+    // Проверяем, что это не ошибка скачивания или загрузки (они уже обработаны выше)
+    if (!errorMessage.includes("VIDEO_DOWNLOAD_FAILED") && !errorMessage.includes("GOOGLE_DRIVE_UPLOAD_FAILED")) {
+      try {
+        if (isFirestoreAvailable() && db) {
+          const channelRef = db
+            .collection("users")
+            .doc(userId)
+            .collection("channels")
+            .doc(channelId);
+          const channelSnap = await channelRef.get();
+          const channelData = channelSnap.exists ? channelSnap.data() : null;
+
+          let timeSlot: string | undefined;
+          if (scheduleId) {
+            try {
+              const scheduleDoc = await channelRef.collection("autoSendSchedules").doc(scheduleId).get();
+              if (scheduleDoc.exists) {
+                const scheduleData = scheduleDoc.data();
+                timeSlot = scheduleData?.time || undefined;
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          await notificationRepository.create({
+            userId,
+            channelId,
+            type: "automation_error",
+            title: "Ошибка автоматизации",
+            message: `Канал: ${channelData?.name || channelId}${timeSlot ? `, слот ${timeSlot}` : ""}. ${errorMessage}`,
+            status: "error",
+            isRead: false,
+            metadata: {
+              scheduleId: scheduleId || undefined,
+              timeSlot,
+              errorDetails: errorMessage
+            }
+          });
+        }
+      } catch (notificationError) {
+        Logger.error("Failed to create automation error notification", {
+          error: notificationError instanceof Error ? notificationError.message : String(notificationError)
+        });
+      }
+    }
 
     // Удаляем временный файл в случае ошибки
     if (tempFilePath) {

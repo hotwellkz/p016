@@ -14,6 +14,7 @@ import ChannelSchedulePage from "./pages/ChannelSchedule/ChannelSchedulePage";
 import ScriptGenerationPage from "./pages/ScriptGeneration/ScriptGenerationPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy/PrivacyPolicy";
 import AccountSettingsPage from "./pages/AccountSettings/AccountSettingsPage";
+import NotificationsPage from "./pages/Notifications/NotificationsPage";
 import { useAuthStore } from "./stores/authStore";
 
 const FullscreenLoader = () => (
@@ -123,6 +124,14 @@ const AppRouter = () => {
       element={
         <PrivateRoute>
           <ScriptGenerationPage />
+        </PrivateRoute>
+      }
+    />
+    <Route
+      path="/notifications"
+      element={
+        <PrivateRoute>
+          <NotificationsPage />
         </PrivateRoute>
       }
     />

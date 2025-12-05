@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchChannelSchedule, type ChannelScheduleItem } from "../../api/channelSchedule";
 import ChannelScheduleTable from "../../components/ChannelScheduleTable";
 import UserMenu from "../../components/UserMenu";
+import NotificationBell from "../../components/NotificationBell";
 import Accordion from "../../components/Accordion";
 import { calculateScheduleConflicts, type ConflictKey } from "../../utils/scheduleConflicts";
 import {
@@ -366,6 +367,7 @@ const ChannelSchedulePage = () => {
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">Обновить</span>
             </button>
+            <NotificationBell />
             <UserMenu />
           </div>
         </div>
