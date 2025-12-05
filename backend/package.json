@@ -8,6 +8,7 @@
     "dev:login": "ts-node-dev --transpile-only src/scripts/loginTelegram.ts",
     "export:telegram-session": "ts-node scripts/export-telegram-session.ts",
     "add:telegram-session:cloud-run": "ts-node scripts/add-telegram-session-to-cloud-run.ts",
+    "add:google-drive:cloud-run": "ts-node scripts/add-google-drive-to-cloud-run.ts",
     "check-env": "node check-env.js",
     "build": "tsc",
     "start": "node dist/index.js"
