@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Loader2, Sparkles, Wand2 } from "lucide-react";
+import { Loader2, Sparkles, Wand2, CheckCircle2, Shield, Zap, Rocket } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "../../stores/authStore";
 import { useNavigate, useLocation, Link } from "react-router-dom";
@@ -13,6 +13,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -29,6 +30,7 @@ const AuthPage = () => {
 
   useEffect(() => {
     initialize();
+    setIsVisible(true);
   }, [initialize]);
 
   useEffect(() => {
@@ -45,8 +47,8 @@ const AuthPage = () => {
   const headline = useMemo(
     () =>
       mode === "login"
-        ? "Войдите, чтобы управлять каналами"
-        : "Создайте аккаунт и запустите мастер каналов",
+        ? "Войдите в систему"
+        : "Создайте аккаунт",
     [mode]
   );
 
@@ -112,156 +114,214 @@ const AuthPage = () => {
         keywords="войти, регистрация, генератор сценариев, tiktok, reels, shorts, AI"
         structuredData={structuredData}
       />
-      <div className="min-h-screen w-full bg-slate-950 px-4 py-12 text-white">
-      <div className="mx-auto grid w-full max-w-5xl gap-12 lg:grid-cols-2">
-        <section className="space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1 text-sm text-brand-light">
-            <Sparkles size={16} />
-            Shorts AI Studio
-          </div>
-          <h1 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
-            Генерируйте сценарии для Shorts, Reels, TikTok и VK Clips за минуты
-          </h1>
-          <p className="text-lg text-slate-300">
-            Настройте каналы с нужным тоном, аудиторией и длительностью, затем
-            запускайте генерацию сценариев на базе OpenAI с персональными
-            ограничениями. Все каналы и сценарии привязаны к вашему Firebase
-            аккаунту.
-          </p>
-          <ul className="space-y-3 text-slate-300">
-            {[
-              "Мастер настройки каналов за 9 шагов",
-              "Безопасное хранение каналов в Firestore",
-              "Генератор сценариев с Hook / Action / Final / Text / Voice / Sound"
-            ].map((item) => (
-              <li key={item} className="flex items-start gap-3">
-                <Wand2 size={18} className="mt-1 text-brand-light" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+      
+      <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0a0f] text-white">
+        {/* Премиальный анимированный фон */}
+        <div className="absolute inset-0">
+          {/* Градиентный фон */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-blue-950/20 to-pink-950/30" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(139,92,246,0.15),transparent_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(236,72,153,0.15),transparent_60%)]" />
+          
+          {/* Светящиеся орбы */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-[120px] animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: "1s" }} />
+          <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-cyan-500/15 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: "0.5s" }} />
+          
+          {/* AI-волна эффект */}
+          <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-purple-950/20 via-transparent to-transparent" />
+        </div>
 
-        <section className="rounded-2xl border border-white/10 bg-slate-900/60 p-8 shadow-2xl shadow-brand/10">
-          <div className="space-y-2 text-center">
-            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
-              Firebase Auth
-            </p>
-            <h2 className="text-2xl font-semibold text-white">{headline}</h2>
-          </div>
+        <div className="relative z-10 mx-auto min-h-screen px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+          <div className="mx-auto grid w-full max-w-7xl gap-12 lg:grid-cols-2 lg:gap-16 items-center">
+            {/* Левая часть - текстовый блок */}
+            <section 
+              className={`space-y-8 transition-all duration-1000 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
+            >
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 rounded-full glass px-5 py-2.5 text-sm font-medium text-purple-300 neon-glow border border-purple-500/30">
+                <Sparkles size={18} className="animate-pulse" />
+                <span>ShortsAI Studio</span>
+              </div>
+              
+              {/* Главный заголовок */}
+              <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
+                <span className="block mb-3">Генерируйте сценарии</span>
+                <span className="block gradient-text">для Shorts, Reels, TikTok</span>
+                <span className="block mt-3 text-4xl sm:text-5xl lg:text-6xl">за минуты</span>
+              </h1>
+              
+              {/* Подзаголовок */}
+              <p className="text-xl sm:text-2xl text-slate-300 leading-relaxed max-w-2xl">
+                Настройте каналы с нужным тоном, аудиторией и длительностью, затем запускайте генерацию сценариев на базе OpenAI с персональными ограничениями.
+              </p>
+              
+              {/* Список преимуществ */}
+              <ul className="space-y-4 text-lg text-slate-300">
+                {[
+                  { icon: Wand2, text: "Мастер настройки каналов за 9 шагов" },
+                  { icon: Shield, text: "Безопасное хранение каналов в Firestore" },
+                  { icon: Zap, text: "Генератор сценариев с Hook / Action / Final / Text / Voice / Sound" },
+                  { icon: Rocket, text: "Автоматизация публикаций по расписанию" }
+                ].map((item, index) => (
+                  <li 
+                    key={index}
+                    className="flex items-start gap-4 fade-in-up"
+                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                  >
+                    <div className="mt-1 flex-shrink-0 rounded-lg bg-purple-500/20 p-2 text-purple-400 border border-purple-500/30">
+                      <item.icon size={20} />
+                    </div>
+                    <span className="pt-0.5">{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
 
-          <div className="mt-6 flex gap-2 rounded-full bg-slate-800/60 p-1 text-sm font-medium">
-            {(["login", "signup"] as AuthMode[]).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setMode(tab)}
-                className={clsx(
-                  "flex-1 rounded-full px-3 py-2 transition",
-                  mode === tab
-                    ? "bg-white text-slate-900"
-                    : "text-slate-400 hover:text-white"
+            {/* Правая часть - форма авторизации */}
+            <section 
+              className={`transition-all duration-1000 delay-200 ${
+                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
+            >
+              <div className="glass-strong rounded-3xl border border-white/20 p-8 sm:p-10 shadow-2xl neon-glow">
+                {/* Заголовок формы */}
+                <div className="mb-8 text-center">
+                  <p className="mb-2 text-xs uppercase tracking-[0.3em] text-slate-400">
+                    Firebase Auth
+                  </p>
+                  <h2 className="text-3xl font-bold text-white">{headline}</h2>
+                </div>
+
+                {/* Переключатель Вход/Регистрация */}
+                <div className="mb-8 flex gap-2 rounded-2xl glass p-1.5 border border-white/10">
+                  {(["login", "signup"] as AuthMode[]).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setMode(tab)}
+                      className={clsx(
+                        "flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300",
+                        mode === tab
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30"
+                          : "text-slate-400 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      {tab === "login" ? "Вход" : "Регистрация"}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Сообщения об ошибках */}
+                {(error || localError) && (
+                  <div className="mb-6 rounded-xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200 backdrop-blur-sm">
+                    {localError ?? error}
+                  </div>
                 )}
-              >
-                {tab === "login" ? "Вход" : "Регистрация"}
-              </button>
-            ))}
+
+                {/* Сообщение об успешном входе */}
+                {user && (
+                  <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-900/20 px-4 py-3 text-sm text-emerald-100 backdrop-blur-sm">
+                    Вы вошли как <span className="font-semibold">{user.email}</span>
+                  </div>
+                )}
+
+                {/* Форма */}
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="email"
+                      className="text-sm font-semibold text-slate-200"
+                    >
+                      Email
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      required
+                      className="w-full rounded-xl glass border border-white/10 bg-white/5 px-5 py-4 text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-purple-500/50 focus:bg-white/10 focus:ring-2 focus:ring-purple-500/20 focus:shadow-lg focus:shadow-purple-500/10"
+                      placeholder="founder@studio.me"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="password"
+                      className="text-sm font-semibold text-slate-200"
+                    >
+                      Пароль
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      required
+                      className="w-full rounded-xl glass border border-white/10 bg-white/5 px-5 py-4 text-white outline-none transition-all duration-300 placeholder:text-slate-500 focus:border-purple-500/50 focus:bg-white/10 focus:ring-2 focus:ring-purple-500/20 focus:shadow-lg focus:shadow-purple-500/10"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  {/* Кнопка входа */}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 px-6 py-4 text-base font-bold text-white transition-all duration-300 neon-glow-hover hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/40 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                    style={{ backgroundSize: "200% 200%" }}
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                      {modeLabel}
+                    </span>
+                    <div 
+                      className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
+                      style={{ backgroundSize: "200% 200%", animation: "gradient-shift 3s ease infinite" }} 
+                    />
+                  </button>
+                </form>
+
+                {/* Переключение режима */}
+                <div className="mt-6 text-center">
+                  <button
+                    type="button"
+                    onClick={toggleMode}
+                    className="text-sm font-medium text-purple-400 underline-offset-4 transition hover:text-purple-300"
+                  >
+                    {secondaryActionLabel}
+                  </button>
+                </div>
+
+                {/* Кнопка выхода */}
+                {user && (
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-6 w-full rounded-xl glass border border-white/10 px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
+                  >
+                    Выйти из аккаунта
+                  </button>
+                )}
+              </div>
+            </section>
           </div>
 
-          {(error || localError) && (
-            <div className="mt-6 rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-              {localError ?? error}
-            </div>
-          )}
-
-          {user && (
-            <div className="mt-6 rounded-lg border border-emerald-400/30 bg-emerald-900/20 px-4 py-3 text-sm text-emerald-100">
-              Вы вошли как <span className="font-semibold">{user.email}</span>
-            </div>
-          )}
-
-          <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <label
-                htmlFor="email"
-                className="text-sm font-medium text-slate-200"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/40"
-                placeholder="founder@studio.me"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium text-slate-200"
-              >
-                Пароль
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/40"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-base font-semibold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-70"
+          {/* Footer */}
+          <footer className="mx-auto mt-16 max-w-7xl border-t border-white/5 pt-8 text-center">
+            <Link
+              to="/privacy"
+              className="text-sm text-slate-400 underline-offset-4 transition hover:text-purple-400"
             >
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {modeLabel}
-            </button>
-          </form>
-
-          <div className="mt-4 text-center text-sm text-slate-400">
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="font-medium text-brand-light underline-offset-4 transition hover:text-brand"
-            >
-              {secondaryActionLabel}
-            </button>
-          </div>
-
-          {user && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="mt-6 w-full rounded-xl border border-white/10 px-4 py-3 text-sm text-slate-300 transition hover:border-white/30 hover:text-white"
-            >
-              Выйти из аккаунта
-            </button>
-          )}
-        </section>
+              Политика конфиденциальности
+            </Link>
+          </footer>
+        </div>
       </div>
-
-      {/* Footer with Privacy Policy link */}
-      <footer className="mx-auto mt-12 max-w-5xl border-t border-white/10 pt-8 text-center">
-        <Link
-          to="/privacy"
-          className="text-sm text-slate-400 underline transition hover:text-slate-200"
-        >
-          Политика конфиденциальности
-        </Link>
-      </footer>
-    </div>
     </>
   );
 };
 
 export default AuthPage;
-
