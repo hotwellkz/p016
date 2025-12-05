@@ -20,9 +20,39 @@ import { getFirestoreInfo, isFirestoreAvailable } from "./services/firebaseAdmin
 const app = express();
 const port = process.env.PORT || 8080;
 
+// Нормализуем FRONTEND_ORIGIN (убираем завершающий слеш)
+const normalizeOrigin = (origin: string | undefined): string | undefined => {
+  if (!origin) return undefined;
+  return origin.replace(/\/+$/, ""); // Убираем завершающие слеши
+};
+
+const frontendOrigin = normalizeOrigin(process.env.FRONTEND_ORIGIN) ?? "http://localhost:5173";
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_ORIGIN ?? "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Разрешаем запросы без origin (например, Postman, curl)
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // Нормализуем origin (убираем завершающий слеш)
+      const normalizedOrigin = origin.replace(/\/+$/, "");
+      const normalizedFrontendOrigin = frontendOrigin.replace(/\/+$/, "");
+      
+      // Разрешаем запросы с нормализованного origin
+      if (normalizedOrigin === normalizedFrontendOrigin) {
+        return callback(null, true);
+      }
+      
+      // Также разрешаем запросы с завершающим слешом для совместимости
+      if (normalizedOrigin + "/" === normalizedFrontendOrigin || 
+          normalizedOrigin === normalizedFrontendOrigin + "/") {
+        return callback(null, true);
+      }
+      
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true
   })
 );
