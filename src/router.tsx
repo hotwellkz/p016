@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import AuthPage from "./pages/Auth/AuthPage";
+import LandingPage from "./pages/Landing/LandingPage";
 import ChannelListPage from "./pages/ChannelList/ChannelListPage";
 import ChannelWizardPage from "./pages/ChannelWizard/ChannelWizardPage";
 import ChannelEditPage from "./pages/ChannelEdit/ChannelEditPage";
@@ -77,6 +78,7 @@ const AppRouter = () => {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route
@@ -135,8 +137,7 @@ const AppRouter = () => {
         </PrivateRoute>
       }
     />
-    <Route path="/" element={<Navigate to="/channels" replace />} />
-    <Route path="*" element={<Navigate to="/channels" replace />} />
+    <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
