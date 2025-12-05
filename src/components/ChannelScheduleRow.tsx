@@ -68,6 +68,17 @@ function formatRemaining(seconds: number): string {
 }
 
 /**
+ * Форматирует оставшееся время в формат "HH:MM:SS" для мобильной версии
+ */
+function formatRemainingFull(seconds: number): string {
+  if (seconds <= 0) return "00:00:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
+
+/**
  * Форматирует прошедшее время после предыдущей публикации
  */
 function formatElapsed(seconds: number): string {
@@ -362,6 +373,15 @@ const ChannelScheduleRow = ({
                   ? `${validTimes.length} ${validTimes.length === 1 ? 'публикация' : validTimes.length < 5 ? 'публикации' : 'публикаций'}`
                   : 'Нет публикаций'}
               </div>
+              {/* Обратный отсчёт для активного слота - только на мобильной версии */}
+              {isActiveRow && remainingSeconds > 0 && (
+                <div className="flex items-center justify-between gap-2 rounded border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5">
+                  <span className="text-[10px] text-slate-300 whitespace-nowrap">Запуск через:</span>
+                  <span className="text-[11px] font-mono font-semibold text-emerald-300 tabular-nums">
+                    {formatRemainingFull(remainingSeconds)}
+                  </span>
+                </div>
+              )}
               {validTimes.length > 0 ? (
                 <div className="overflow-x-auto -mx-3 px-3">
                   <div className="flex gap-2 pb-2">
