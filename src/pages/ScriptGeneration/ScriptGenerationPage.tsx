@@ -19,14 +19,16 @@ import {
 } from "../../services/openaiScriptGenerator";
 import { sendPromptToSyntx } from "../../api/telegram";
 import type { Channel } from "../../domain/channel";
+import { updatePreferenceIndex } from "../../utils/preferencesUtils";
 
 const ScriptGenerationPage = () => {
   const { channelId } = useParams<{ channelId: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore((state) => ({ user: state.user }));
-  const { channels, fetchChannels } = useChannelStore((state) => ({
+  const { channels, fetchChannels, updateChannel } = useChannelStore((state) => ({
     channels: state.channels,
-    fetchChannels: state.fetchChannels
+    fetchChannels: state.fetchChannels,
+    updateChannel: state.updateChannel
   }));
 
   const [channel, setChannel] = useState<Channel | null>(null);
@@ -80,10 +82,14 @@ const ScriptGenerationPage = () => {
 
   const handleGenerate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!channel || !idea.trim()) {
+    if (!channel || !idea.trim() || !user?.uid) {
       setError("Введите идею для сценария");
       return;
     }
+
+    // Перезагружаем канал из store, чтобы получить актуальные preferences
+    await fetchChannels(user.uid);
+    const currentChannel = channels.find((c) => c.id === channel.id) || channel;
 
     setLoading(true);
     setError(null);
@@ -91,14 +97,34 @@ const ScriptGenerationPage = () => {
     setDetailedResult(null);
 
     try {
-      const mode = channel.generationMode || "script";
+      const mode = currentChannel.generationMode || "script";
 
       if (mode === "prompt" || mode === "video-prompt-only") {
-        const result = await generateDetailedScripts(channel, idea.trim());
+        const result = await generateDetailedScripts(currentChannel, idea.trim());
         setDetailedResult(result);
       } else {
-        const result = await generateShortScript(channel, idea.trim());
+        const result = await generateShortScript(currentChannel, idea.trim());
         setScript(result);
+      }
+
+      // Обновляем индекс preferences после успешной генерации
+      if (currentChannel.preferences && currentChannel.preferences.mode === "cyclic") {
+        const oldIndex = currentChannel.preferences.lastUsedIndex || 0;
+        const updatedPreferences = updatePreferenceIndex(currentChannel.preferences);
+        const newIndex = updatedPreferences?.lastUsedIndex || 0;
+        
+        // Обновляем только если индекс изменился
+        if (oldIndex !== newIndex) {
+          const updatedChannel = {
+            ...currentChannel,
+            preferences: updatedPreferences
+          };
+          await updateChannel(user.uid, updatedChannel);
+          // Перезагружаем каналы после обновления
+          await fetchChannels(user.uid);
+          // Обновляем локальное состояние канала
+          setChannel(updatedChannel);
+        }
       }
     } catch (err) {
       setError(

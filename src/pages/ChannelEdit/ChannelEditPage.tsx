@@ -8,8 +8,11 @@ import type {
   Channel,
   SupportedPlatform,
   SupportedLanguage,
-  ChannelAutoSendSchedule
+  ChannelAutoSendSchedule,
+  ChannelPreferences
 } from "../../domain/channel";
+import PreferencesVariantsEditor from "../../components/PreferencesVariantsEditor";
+import { validatePreferences } from "../../utils/preferencesUtils";
 
 const PLATFORMS: { value: SupportedPlatform; label: string }[] = [
   { value: "YOUTUBE_SHORTS", label: "YouTube Shorts" },
@@ -71,6 +74,7 @@ const ChannelEditPage = () => {
     tiktok?: string;
     instagram?: string;
   }>({});
+  const [preferencesValid, setPreferencesValid] = useState(true);
 
   useEffect(() => {
     if (!user?.uid || !channelId) {
@@ -159,6 +163,13 @@ const ChannelEditPage = () => {
 
     if (!validateUrls()) {
       setError("Проверьте корректность введённых URL");
+      return;
+    }
+
+    // Валидация preferences
+    const preferencesValidation = validatePreferences(channel.preferences);
+    if (!preferencesValidation.valid) {
+      setError(preferencesValidation.error || "Проверьте настройки пожеланий");
       return;
     }
 
@@ -419,22 +430,13 @@ const ChannelEditPage = () => {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-200">
-                Дополнительные пожелания
-              </label>
-            <textarea
-              value={channel.extraNotes || ""}
-              onChange={(e) => {
-                const textarea = e.target;
-                textarea.style.height = "auto";
-                textarea.style.height = `${textarea.scrollHeight}px`;
-
-                setChannel({ ...channel, extraNotes: textarea.value });
-              }}
-              rows={4}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/40 min-h-[140px] h-auto resize-y overflow-auto"
-              placeholder="Любые дополнительные требования к сценариям... Например: «бабушка и дедушка — казахи», особенности персонажей, сеттинг, стиль съёмки."
-            />
+              <PreferencesVariantsEditor
+                preferences={channel.preferences}
+                onChange={(preferences: ChannelPreferences) => {
+                  setChannel({ ...channel, preferences });
+                }}
+                onValidationChange={setPreferencesValid}
+              />
             </div>
 
             <div className="space-y-2">

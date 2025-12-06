@@ -123,3 +123,4 @@ Write-Host ""
 Write-Host "💡 Для обновления переменных окружения:" -ForegroundColor Yellow
 Write-Host "gcloud run services update $ServiceName --region $Region --update-env-vars KEY=VALUE"
 
+

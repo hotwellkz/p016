@@ -3,6 +3,18 @@
  * Используется в backend для автопостинга
  */
 
+interface PreferenceVariant {
+  id: string;
+  text: string;
+  order: number;
+}
+
+interface ChannelPreferences {
+  variants: PreferenceVariant[];
+  mode: "cyclic" | "random" | "fixed";
+  lastUsedIndex?: number;
+}
+
 interface Channel {
   id: string;
   name: string;
@@ -14,10 +26,41 @@ interface Channel {
   tone: string;
   blockedTopics: string;
   extraNotes?: string;
+  preferences?: ChannelPreferences;
   generationMode?: "script" | "prompt" | "video-prompt-only";
 }
 
 type GenerationMode = "script" | "prompt" | "video-prompt-only";
+
+/**
+ * Получает текущий вариант пожеланий согласно режиму
+ */
+function getCurrentPreferenceVariant(
+  preferences: ChannelPreferences | undefined
+): string {
+  if (!preferences || preferences.variants.length === 0) {
+    return "";
+  }
+
+  const { variants, mode, lastUsedIndex = 0 } = preferences;
+
+  switch (mode) {
+    case "fixed":
+      // Всегда используем первый вариант
+      return variants[0]?.text || "";
+
+    case "random":
+      // Случайный выбор
+      const randomIndex = Math.floor(Math.random() * variants.length);
+      return variants[randomIndex]?.text || "";
+
+    case "cyclic":
+    default:
+      // Циклический выбор
+      const currentIndex = lastUsedIndex % variants.length;
+      return variants[currentIndex]?.text || "";
+  }
+}
 
 const PLATFORM_NAMES: Record<Channel["platform"], string> = {
   YOUTUBE_SHORTS: "YouTube Shorts",
@@ -158,8 +201,13 @@ No explanations. No markdown. Only clean text.`,
     settingsList.push(`${settingNumber++}. ${labels.blockedTopics}: ${channel.blockedTopics}`);
   }
   
-  if (channel.extraNotes) {
-    settingsList.push(`${settingNumber++}. ${labels.extraNotes}:\n\n${channel.extraNotes}`);
+  // Используем preferences если они есть, иначе fallback на extraNotes для обратной совместимости
+  const preferenceText = channel.preferences 
+    ? getCurrentPreferenceVariant(channel.preferences)
+    : channel.extraNotes;
+  
+  if (preferenceText) {
+    settingsList.push(`${settingNumber++}. ${labels.extraNotes}:\n\n${preferenceText}`);
   }
 
   return `${systemRole[lang]}
@@ -213,9 +261,14 @@ Target audience: ${channel.audience}`,
     userPrompt += `\n${blockedLabel}: ${channel.blockedTopics}`;
   }
 
-  if (channel.extraNotes) {
+  // Используем preferences если они есть, иначе fallback на extraNotes для обратной совместимости
+  const preferenceText = channel.preferences 
+    ? getCurrentPreferenceVariant(channel.preferences)
+    : channel.extraNotes;
+
+  if (preferenceText) {
     const notesLabel = lang === "ru" ? "Дополнительные пожелания" : lang === "en" ? "Additional notes" : "Қосымша ескертулер";
-    userPrompt += `\n\n${notesLabel}:\n${channel.extraNotes}`;
+    userPrompt += `\n\n${notesLabel}:\n${preferenceText}`;
   }
 
   if (idea) {

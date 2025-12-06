@@ -129,3 +129,4 @@ router.patch("/read-all", authRequired, async (req, res) => {
 
 export default router;
 
+

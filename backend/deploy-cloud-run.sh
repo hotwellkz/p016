@@ -134,3 +134,4 @@ echo ""
 echo -e "${YELLOW}💡 Для обновления переменных окружения:${NC}"
 echo "gcloud run services update $SERVICE_NAME --region $REGION --update-env-vars KEY=VALUE"
 
+

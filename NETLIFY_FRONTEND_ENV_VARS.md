@@ -140,3 +140,4 @@ SECRETS_SCAN_SMART_DETECTION_ENABLED=false
 - [Vite Environment Variables](https://vite.dev/guide/env-and-mode.html)
 - [Firebase Setup Guide](./FIREBASE_SETUP.md)
 
+

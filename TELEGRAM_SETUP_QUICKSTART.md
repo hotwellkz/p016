@@ -51,3 +51,4 @@ gcloud run services update shorts-backend \
 
 📚 Подробная инструкция: [backend/TELEGRAM_CLOUD_RUN_SETUP.md](./backend/TELEGRAM_CLOUD_RUN_SETUP.md)
 
+

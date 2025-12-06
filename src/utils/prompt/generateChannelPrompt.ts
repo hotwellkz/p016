@@ -1,4 +1,5 @@
 import type { Channel, GenerationMode } from "../../domain/channel";
+import { getCurrentPreferenceVariant } from "../preferencesUtils";
 
 const PLATFORM_NAMES: Record<Channel["platform"], string> = {
   YOUTUBE_SHORTS: "YouTube Shorts",
@@ -160,8 +161,13 @@ No explanations. No markdown. Only clean text.`,
     settingsList.push(`${settingNumber++}. ${labels.blockedTopics}: ${channel.blockedTopics}`);
   }
   
-  if (channel.extraNotes) {
-    settingsList.push(`${settingNumber++}. ${labels.extraNotes}:\n\n${channel.extraNotes}`);
+  // Используем preferences если они есть, иначе fallback на extraNotes для обратной совместимости
+  const preferenceText = channel.preferences 
+    ? getCurrentPreferenceVariant(channel.preferences)
+    : channel.extraNotes;
+  
+  if (preferenceText) {
+    settingsList.push(`${settingNumber++}. ${labels.extraNotes}:\n\n${preferenceText}`);
   }
 
   return `${systemRole[lang]}
@@ -215,9 +221,14 @@ Target audience: ${channel.audience}`,
     userPrompt += `\n${blockedLabel}: ${channel.blockedTopics}`;
   }
 
-  if (channel.extraNotes) {
+  // Используем preferences если они есть, иначе fallback на extraNotes для обратной совместимости
+  const preferenceText = channel.preferences 
+    ? getCurrentPreferenceVariant(channel.preferences)
+    : channel.extraNotes;
+
+  if (preferenceText) {
     const notesLabel = lang === "ru" ? "Дополнительные пожелания" : lang === "en" ? "Additional notes" : "Қосымша ескертулер";
-    userPrompt += `\n\n${notesLabel}:\n${channel.extraNotes}`;
+    userPrompt += `\n\n${notesLabel}:\n${preferenceText}`;
   }
 
   if (idea) {

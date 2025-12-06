@@ -17,11 +17,43 @@ interface Channel {
   generationMode?: "script" | "prompt" | "video-prompt-only";
 }
 
+const PLATFORM_NAMES: Record<Channel["platform"], string> = {
+  YOUTUBE_SHORTS: "YouTube Shorts",
+  TIKTOK: "TikTok",
+  INSTAGRAM_REELS: "Instagram Reels",
+  VK_CLIPS: "VK Клипы"
+};
+
 const LANGUAGE_NAMES: Record<Channel["language"], string> = {
   ru: "Русский",
   en: "English",
   kk: "Қазақша"
 };
+
+/**
+ * Получает текущий вариант пожеланий согласно режиму
+ */
+function getCurrentPreferenceVariant(
+  preferences: Channel["preferences"]
+): string {
+  if (!preferences || preferences.variants.length === 0) {
+    return "";
+  }
+
+  const { variants, mode, lastUsedIndex = 0 } = preferences;
+
+  switch (mode) {
+    case "fixed":
+      return variants[0]?.text || "";
+    case "random":
+      const randomIndex = Math.floor(Math.random() * variants.length);
+      return variants[randomIndex]?.text || "";
+    case "cyclic":
+    default:
+      const currentIndex = lastUsedIndex % variants.length;
+      return variants[currentIndex]?.text || "";
+  }
+}
 
 /**
  * Получает канал из Firestore
@@ -55,27 +87,138 @@ async function getChannelFromFirestore(
 
 /**
  * Строит промпт для автогенерации идеи и сценариев
- * Использует универсальный генератор промптов
+ * Полностью персонализированный промпт на основе настроек канала
  */
 function buildAutoGeneratePrompt(channel: Channel): string {
-  // Используем универсальный генератор, но для автогенерации нужен JSON формат
-  const { systemPrompt, userPrompt } = generateChannelPrompt(channel, "script");
-  
-  // Добавляем инструкцию по JSON формату для автогенерации
-  return `${systemPrompt}
+  const platformName = PLATFORM_NAMES[channel.platform];
+  const languageName = LANGUAGE_NAMES[channel.language];
 
-**Формат ответа (JSON):**
+  // Получаем вариант пожеланий
+  const preferenceText = channel.preferences 
+    ? getCurrentPreferenceVariant(channel.preferences)
+    : channel.extraNotes;
+
+  // Формируем детальный контекст канала с акцентом на уникальность
+  const contextParts: string[] = [];
+  
+  // 1. НАЗВАНИЕ КАНАЛА - критически важно
+  if (channel.name && channel.name.trim()) {
+    contextParts.push(`**НАЗВАНИЕ КАНАЛА:** "${channel.name}"`);
+    contextParts.push(`⚠️ КРИТИЧЕСКИ ВАЖНО: Идея должна быть УНИКАЛЬНОЙ для канала "${channel.name}".`);
+    contextParts.push(`Название канала - это ключевой индикатор тематики. Если канал называется "Бабушка и Дедушка" → идея должна быть в их стиле. Если "Мемы про котиков" → идея про котиков. Если "Стройка" → идея про стройку.`);
+    contextParts.push(`НЕ используй универсальные шаблоны, которые подходят для любого канала.`);
+  }
+  
+  // 2. ТЕМАТИКА/НИША - основа генерации
+  if (channel.niche && channel.niche.trim()) {
+    contextParts.push(`**ТЕМАТИКА/НИША:** "${channel.niche}"`);
+    contextParts.push(`Идея ДОЛЖНА быть строго в рамках тематики "${channel.niche}".`);
+    contextParts.push(`Примеры соответствия:`);
+    contextParts.push(`- Если ниша "мемы" → идея должна быть мемной, вирусной, смешной`);
+    contextParts.push(`- Если ниша "животные" → идея должна быть про животных, их поведение, забавные ситуации`);
+    contextParts.push(`- Если ниша "строительство" → идея должна быть связана со стройкой, инструментами, ремонтом`);
+    contextParts.push(`- Если ниша "кулинария" → идея должна быть про готовку, рецепты, еду`);
+    contextParts.push(`НЕ генерируй идеи, которые не относятся к нише "${channel.niche}".`);
+  }
+  
+  // 3. ЯЗЫК
+  contextParts.push(`**ЯЗЫК:** ${languageName}`);
+  contextParts.push(`Все реплики, текст и диалоги должны быть на языке: ${languageName}.`);
+  
+  // 4. ПЛАТФОРМА
+  contextParts.push(`**ПЛАТФОРМА:** ${platformName}`);
+  contextParts.push(`Формат контента должен соответствовать специфике ${platformName}.`);
+  
+  // 5. ДЛИТЕЛЬНОСТЬ
+  contextParts.push(`**ДЛИТЕЛЬНОСТЬ:** ${channel.targetDurationSec} секунд`);
+  contextParts.push(`Сценарий должен точно укладываться в ${channel.targetDurationSec} секунд.`);
+  
+  // 6. ЦЕЛЕВАЯ АУДИТОРИЯ
+  if (channel.audience && channel.audience.trim()) {
+    contextParts.push(`**ЦЕЛЕВАЯ АУДИТОРИЯ:** ${channel.audience}`);
+    contextParts.push(`Идея должна быть интересна и понятна аудитории: ${channel.audience}.`);
+  }
+  
+  // 7. ТОН/СТИЛЬ
+  if (channel.tone && channel.tone.trim()) {
+    contextParts.push(`**ТОН/СТИЛЬ:** "${channel.tone}"`);
+    contextParts.push(`Весь контент должен быть в тоне "${channel.tone}".`);
+    contextParts.push(`Примеры:`);
+    contextParts.push(`- Если тон "Юмор" → идея должна быть смешной, с юмором, возможно абсурдной`);
+    contextParts.push(`- Если тон "Серьёзно" → идея должна быть серьёзной, информативной, без шуток`);
+    contextParts.push(`- Если тон "Детское" → идея должна быть детской, понятной детям, яркой`);
+    contextParts.push(`- Если тон "Вдохновляющее" → идея должна вдохновлять, мотивировать`);
+  }
+  
+  // 8. ЗАПРЕЩЁННЫЕ ТЕМЫ
+  if (channel.blockedTopics && channel.blockedTopics.trim()) {
+    contextParts.push(`**ЗАПРЕЩЁННЫЕ ТЕМЫ (НИКОГДА не используй):** ${channel.blockedTopics}`);
+  }
+  
+  // 9. ДОПОЛНИТЕЛЬНЫЕ ПОЖЕЛАНИЯ (выбранная вариация)
+  if (preferenceText && preferenceText.trim()) {
+    contextParts.push(`**ДОПОЛНИТЕЛЬНЫЕ ТРЕБОВАНИЯ (ОБЯЗАТЕЛЬНО учитывай):**`);
+    contextParts.push(preferenceText);
+    contextParts.push(`Эти требования имеют ВЫСОКИЙ ПРИОРИТЕТ. Идея должна им строго соответствовать.`);
+  }
+
+  // Формируем финальный промпт
+  const contextString = contextParts.join("\n\n");
+
+  return `Ты — профессиональный сценарист, специализирующийся на создании уникальных идей для коротких вертикальных видео.
+
+ТВОЯ ЗАДАЧА: создать УНИКАЛЬНУЮ идею ролика, которая:
+- Строго соответствует настройкам ЭТОГО конкретного канала
+- НЕ является универсальным шаблоном
+- НЕ повторяет стандартные идеи
+- Полностью соответствует тематике канала
+
+${contextString}
+
+**КРИТИЧЕСКИ ВАЖНЫЕ ТРЕБОВАНИЯ:**
+
+1. **УНИКАЛЬНОСТЬ ДЛЯ КАНАЛА:** Идея должна быть уникальной для этого конкретного канала. Если канал про мемы → идея про мемы. Если про животных → идея про животных. Если канал называется "Бабушка и Дедушка" → идея должна быть в их стиле, с их персонажами. Если канал про строительство → идея должна быть связана со стройкой, инструментами, ремонтом.
+
+2. **ТЕМАТИЧНОСТЬ:** Идея ОБЯЗАТЕЛЬНО должна быть связана с тематикой канала "${channel.niche}". НЕ используй общие шаблоны, которые не относятся к этой нише. НЕ генерируй универсальные идеи типа "что-то происходит на кухне", если канал не про кулинарию.
+
+3. **СООТВЕТСТВИЕ НАСТРОЙКАМ:** Идея должна учитывать ВСЕ параметры канала: язык (${languageName}), тон (${channel.tone || "соответствующий каналу"}), аудиторию (${channel.audience || "общая"}), длительность (${channel.targetDurationSec} секунд), дополнительные требования.
+
+4. **ЗАПРЕТ НА ШАБЛОНЫ:** ЗАПРЕЩЕНО использовать универсальные идеи, которые подходят для любого канала. Каждая идея должна быть персонализирована под этот конкретный канал.
+
+5. **РАЗНООБРАЗИЕ:** При каждом запросе генерируй РАЗНУЮ идею. Не повторяй предыдущие идеи. Используй разные углы, разные ситуации, разные подходы в рамках тематики канала.
+
+**ЗАДАЧА:**
+
+1. Придумай ОДНУ яркую, уникальную идею ролика, которая:
+   - Полностью соответствует тематике "${channel.niche}"
+   - Учитывает все настройки канала выше
+   - Является уникальной, а не шаблонной
+   - Укладывается в ${channel.targetDurationSec} секунд
+   - На языке: ${languageName}
+   - В тоне: ${channel.tone || "соответствующем каналу"}
+   ${channel.name ? `- Соответствует стилю канала "${channel.name}"` : ""}
+
+2. Создай 1-3 детальных сценария для этой идеи.
+
+Каждый сценарий должен содержать:
+- Детальное описание действий по секундам (0-${channel.targetDurationSec} секунд)
+- Реплики персонажей на языке ${languageName}
+- Эмоции и реакции персонажей
+- Визуальные детали и движения камеры
+- Точную разбивку по времени
+
+**ФОРМАТ ОТВЕТА (JSON):**
 
 {
-  "idea": "Краткое описание идеи ролика (1-2 предложения)",
+  "idea": "Уникальная идея ролика, строго соответствующая тематике канала "${channel.niche}" (1-2 предложения)",
   "scripts": [
-    "Сценарий 1: [детальное описание с репликами и действиями]",
-    "Сценарий 2: [детальное описание с репликами и действиями]",
-    "Сценарий 3: [детальное описание с репликами и действиями] (опционально)"
+    "Сценарий 1: [детальное описание с репликами, действиями, эмоциями, разбивкой по секундам 0-${channel.targetDurationSec}с]",
+    "Сценарий 2: [детальное описание с репликами, действиями, эмоциями, разбивкой по секундам 0-${channel.targetDurationSec}с]",
+    "Сценарий 3: [детальное описание с репликами, действиями, эмоциями, разбивкой по секундам 0-${channel.targetDurationSec}с] (опционально)"
   ]
 }
 
-Верни ТОЛЬКО валидный JSON, без дополнительных комментариев.`;
+**ВАЖНО:** Верни ТОЛЬКО валидный JSON, без дополнительных комментариев, без markdown-разметки, только чистый JSON.`;
 }
 
 /**
@@ -337,8 +480,8 @@ export async function generatePromptForChannel(
         content: userPrompt
       }
     ],
-    temperature: 0.9,
-    max_tokens: 2000
+    temperature: 1.0, // Увеличена для большей вариативности и уникальности идей
+    max_tokens: 2500 // Увеличено для более детальных сценариев
   };
 
   if (supportsJsonMode) {

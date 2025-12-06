@@ -14,6 +14,20 @@ export type SupportedLanguage = "ru" | "en" | "kk";
 
 export type GenerationMode = "script" | "prompt" | "video-prompt-only";
 
+export type PreferencesMode = "cyclic" | "random" | "fixed";
+
+export interface PreferenceVariant {
+  id: string; // uuid
+  text: string;
+  order: number; // порядок отображения
+}
+
+export interface ChannelPreferences {
+  variants: PreferenceVariant[];
+  mode: PreferencesMode;
+  lastUsedIndex?: number; // для циклического режима
+}
+
 export interface ChannelAutoSendSchedule {
   id: string; // uuid
   enabled: boolean; // включен ли этот конкретный слот
@@ -34,7 +48,8 @@ export interface Channel {
   audience: string;
   tone: string;
   blockedTopics: string;
-  extraNotes?: string;
+  extraNotes?: string; // Устаревшее поле, оставлено для обратной совместимости
+  preferences?: ChannelPreferences; // Новая система мульти-пожеланий
   generationMode?: GenerationMode; // По умолчанию "script" для обратной совместимости
   youtubeUrl?: string | null; // Ссылка на YouTube канал
   tiktokUrl?: string | null; // Ссылка на TikTok канал
@@ -98,6 +113,19 @@ export const channelConverter: FirestoreDataConverter<Channel> = {
     if (rest.extraNotes !== undefined) {
       data.extraNotes = rest.extraNotes;
     }
+    if (rest.preferences !== undefined) {
+      data.preferences = rest.preferences;
+      
+      // Отладочный лог (только в development)
+      if (import.meta.env.DEV) {
+        console.log("💾 toFirestore - Saving preferences:", {
+          channelId: rest.id || "new",
+          mode: rest.preferences.mode,
+          lastUsedIndex: rest.preferences.lastUsedIndex,
+          variantsCount: rest.preferences.variants.length
+        });
+      }
+    }
     if (rest.googleDriveFolderId !== undefined) {
       data.googleDriveFolderId = rest.googleDriveFolderId;
     }
@@ -136,11 +164,54 @@ export const channelConverter: FirestoreDataConverter<Channel> = {
   },
   fromFirestore(snapshot, options): Channel {
     const data = snapshot.data(options) as ChannelFirestoreData;
-    return {
+    const channel: Channel = {
       id: snapshot.id,
       generationMode: data.generationMode || "script", // Значение по умолчанию для старых каналов
       ...data
     };
+    
+    // Миграция: если есть extraNotes, но нет preferences, создаём preferences из extraNotes
+    if (!channel.preferences && channel.extraNotes) {
+      channel.preferences = {
+        variants: [{
+          id: crypto.randomUUID(),
+          text: channel.extraNotes,
+          order: 1
+        }],
+        mode: "fixed",
+        lastUsedIndex: 0
+      };
+    }
+    
+    // Если preferences есть, но пустые, создаём дефолтный вариант
+    if (channel.preferences && channel.preferences.variants.length === 0) {
+      channel.preferences = {
+        variants: [{
+          id: crypto.randomUUID(),
+          text: "",
+          order: 1
+        }],
+        mode: channel.preferences.mode || "cyclic",
+        lastUsedIndex: 0
+      };
+    }
+    
+    // Убеждаемся, что lastUsedIndex установлен
+    if (channel.preferences && channel.preferences.lastUsedIndex === undefined) {
+      channel.preferences.lastUsedIndex = 0;
+    }
+    
+    // Отладочный лог (только в development)
+    if (import.meta.env.DEV && channel.preferences) {
+      console.log("📥 fromFirestore - Loaded preferences:", {
+        channelId: channel.id,
+        mode: channel.preferences.mode,
+        lastUsedIndex: channel.preferences.lastUsedIndex,
+        variantsCount: channel.preferences.variants.length
+      });
+    }
+    
+    return channel;
   }
 };
 
@@ -157,6 +228,15 @@ export const createEmptyChannel = (): Channel => {
     tone: "",
     blockedTopics: "",
     extraNotes: "",
+    preferences: {
+      variants: [{
+        id: crypto.randomUUID(),
+        text: "",
+        order: 1
+      }],
+      mode: "cyclic",
+      lastUsedIndex: 0
+    },
     generationMode: "script",
     youtubeUrl: null,
     tiktokUrl: null,

@@ -126,3 +126,4 @@ gcloud run services logs read shorts-backend --region us-central1 --limit 50
 - Убедитесь, что ключ не повреждён
 - Проверьте, что Google Drive API включен
 
+
